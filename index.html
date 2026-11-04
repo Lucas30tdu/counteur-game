@@ -1546,9 +1546,14 @@ document.addEventListener("keydown",e=>{if(!OG||curScreen!==$("#s-play"))return;
 ["gesturestart","gesturechange","gestureend","contextmenu","selectstart","copy","cut","paste","dragstart"].forEach(t=>document.addEventListener(t,stop));
 document.addEventListener("touchmove",e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 document.addEventListener("wheel",e=>{if(e.ctrlKey)e.preventDefault()},{passive:false});
-/* Filet de sécurité : un toucher sur une carte déclenche toujours son action */
+/* Filet de sécurité : sur iPhone, Safari peut avaler le « clic » d'un toucher quand l'écran s'anime encore
+   (retour à l'accueil, blocs qui apparaissent). Tout bouton touché déclenche donc son action dès que le doigt se lève,
+   à condition que le doigt soit toujours sur le bouton ; le clic natif qui suit est ignoré pour ne pas agir deux fois. */
 let tapAt=0;
-document.addEventListener("pointerup",e=>{if(e.pointerType!=="touch"||e.button>0)return;const b=e.target.closest&&e.target.closest(".card-btn");if(!b||b.disabled)return;tapAt=Date.now();setTimeout(()=>{if(b.isConnected)b.click()},0)},true);
+document.addEventListener("pointerup",e=>{if(e.pointerType!=="touch"||e.button>0||!e.isPrimary)return;
+  const b=e.target.closest&&e.target.closest("button");if(!b||b.disabled)return;
+  const under=document.elementFromPoint(e.clientX,e.clientY);if(!under||!b.contains(under))return;
+  tapAt=Date.now();setTimeout(()=>{if(b.isConnected&&!b.disabled)b.click()},0)},true);
 document.addEventListener("click",e=>{if(e.isTrusted&&Date.now()-tapAt<600){e.stopImmediatePropagation();e.preventDefault()}},true);
 document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&["+","-","=","0"].includes(e.key))e.preventDefault()});
 })();

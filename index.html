@@ -489,6 +489,9 @@ html{-webkit-text-size-adjust:100%}
 
 /* Entrée en cascade (garder en dernier) */
 .rise{animation:rise .62s var(--ease-out) backwards;animation-delay:var(--d,0ms)}
+/* Accueil : les blocs apparaissent en fondu, sans bouger, pour qu'un appui juste après le retour tombe toujours sur le bon bouton */
+.fade-in{animation:fadeIn .5s var(--ease-out) backwards;animation-delay:var(--d,0ms)}
+@keyframes fadeIn{from{opacity:0}}
 .imposed{animation:rise .6s var(--ease-out) backwards,stripes 1.4s linear infinite}
 @keyframes rise{from{opacity:0;transform:translateY(16px) scale(.985)}}
 .no-motion *,.no-motion *::before,.no-motion *::after{animation:none!important;transition:none!important}
@@ -909,8 +912,8 @@ function gapChip(e){const t=tier(e);return `<span class="gap gap-${t}"><i>${gapT
 function titleFor(n){if(n>=85)return["Oracle","Tu lis dans les chiffres."];if(n>=65)return["Fin limier","Du flair, et peu de fausses pistes."];if(n>=40)return["Optimiste","L'intuition est là, les chiffres pas toujours."];return["Au pif","Le hasard a fait de son mieux."]}
 function reduced(){return !D.settings.anim||matchMedia("(prefers-reduced-motion: reduce)").matches}
 function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
-function riseIn(nodes,base,step){if(reduced())return;base=base||0;step=step==null?40:step;
-  [...nodes].forEach((n,i)=>{if(!(n instanceof HTMLElement)||n.hidden)return;n.style.setProperty("--d",(base+i*step)+"ms");n.classList.remove("rise","q-in","shake","bump");void n.offsetWidth;n.classList.add("rise")})}
+function riseIn(nodes,base,step,fade){if(reduced())return;base=base||0;step=step==null?40:step;const cls=fade?"fade-in":"rise";
+  [...nodes].forEach((n,i)=>{if(!(n instanceof HTMLElement)||n.hidden)return;n.style.setProperty("--d",(base+i*step)+"ms");n.classList.remove("rise","fade-in","q-in","shake","bump");void n.offsetWidth;n.classList.add(cls)})}
 const FX=["rise","q-in","shake","bump","glow","nudge","wobble","land","enter"];
 function replay(el,cls){if(!el||reduced())return;el.classList.remove(...FX);void el.offsetWidth;el.classList.add(cls)}
 function countUp(el,to,dur,from,f,done){from=from||0;f=f||fmt;if(!el)return;if(reduced()){el.textContent=f(to);done&&done();return}
@@ -957,8 +960,8 @@ function show(id){const next=$("#s-"+id);const prev=curScreen&&curScreen!==next?
     if(reduced())prev.hidden=true;else{prev.classList.add("is-leaving");leaveT[prev.id]=setTimeout(()=>{prev.hidden=true;prev.classList.remove("is-leaving")},240)}}
   clearTimeout(leaveT[next.id]);next.classList.remove("is-leaving");next.hidden=false;next.scrollTop=0;curScreen=next;
   if(!same&&!reduced()){
-    riseIn([...next.children].filter(n=>!n.matches(".end-panel,.counter")),60,45);
-    if(id==="home"){const p=next.querySelector(".panel:not([hidden])");if(p)riseIn(p.children,180,36)}
+    riseIn([...next.children].filter(n=>!n.matches(".end-panel,.counter")&&!(id==="home"&&n.matches(".panel"))),60,45);
+    if(id==="home"){const p=next.querySelector(".panel:not([hidden])");if(p)riseIn(p.children,180,36,true)}
     if(id==="play")replay($("#counter"),"enter");
     if(id==="rules")riseIn(next.querySelectorAll(".steps li"),220,70)}
   placeAll(false)}

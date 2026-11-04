@@ -460,6 +460,26 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;opa
 .sel{width:100%;height:52px;border:0;border-radius:var(--radius-md);background:var(--surface-sunken);color:var(--ink);font:inherit;font-weight:700;font-size:16px;padding:0 var(--space-4);-webkit-appearance:none;appearance:none}
 .row-btns{display:flex;gap:var(--space-2);flex-wrap:wrap}
 .lobby-card{flex:none;min-height:230px}
+/* Bouton en attente de Firebase : le libellé change et trois points rebondissent */
+.btn.loading{pointer-events:none}
+.btn.loading:disabled{opacity:1}
+.dots{display:inline-flex;gap:4px;margin-left:6px}
+.dots i{width:6px;height:6px;border-radius:50%;background:currentColor;animation:dotJump .9s var(--ease-out) infinite}
+.dots i:nth-child(2){animation-delay:.12s}.dots i:nth-child(3){animation-delay:.24s}
+@keyframes dotJump{0%,60%,100%{transform:none;opacity:.45}30%{transform:translateY(-5px);opacity:1}}
+/* Code du salon : chaque lettre tombe à son tour, comme le compteur qui roule */
+.code-l{display:inline-block}
+.lobby-card.anim .code-l{animation:codeIn .7s var(--ease-spring) both;animation-delay:calc(260ms + var(--i) * 110ms)}
+@keyframes codeIn{0%{opacity:0;transform:translateY(-.6em) rotate(-8deg) scale(.7);filter:blur(4px)}60%{opacity:1;filter:blur(0)}}
+.lobby-card.anim .caption,.lobby-card.anim .blurb{animation:rise .6s var(--ease-out) both}
+.lobby-card.anim .blurb{animation-delay:.75s}
+.lobby-card.anim{animation:lobbyIn .75s var(--ease-spring) both}
+@keyframes lobbyIn{from{opacity:0;transform:scale(.92) translateY(18px)}}
+/* Un joueur qui arrive dans le salon */
+.drow.join{animation:joinIn .55s var(--ease-spring) both}
+@keyframes joinIn{from{opacity:0;transform:translateX(-18px) scale(.96)}}
+.drow.join .pdot{animation:dotPop .6s var(--ease-spring) .15s both}
+@keyframes dotPop{from{transform:scale(0)}50%{transform:scale(1.6)}}
 /* Sur l'accueil, les blocs posés sous la carte Jouer restent toujours au-dessus de son ombre, pendant et après l'animation d'entrée */
 #p-series>.box,#p-series>.section-title,#p-series>.resume-bar{position:relative;z-index:1}
 .lobby-card h1{font-size:64px;line-height:68px;letter-spacing:.14em;margin-right:-.14em}
@@ -542,8 +562,8 @@ html{-webkit-text-size-adjust:100%}
       <h3 id="about-h">À propos</h3>
       <dl class="about">
         <div><dt>Nom</dt><dd>Counteur</dd></div>
-        <div><dt>Version du jeu</dt><dd>2.3</dd></div>
-        <div><dt>Version de l'artefact</dt><dd>1793798425-eb4d</dd></div>
+        <div><dt>Version du jeu</dt><dd>2.4</dd></div>
+        <div><dt>Version de l'artefact</dt><dd>1793799379-4049</dd></div>
         <div><dt>Dernière modification</dt><dd>04/11/2026</dd></div>
         <div><dt>Créé par</dt><dd>Lucas Courcy</dd></div>
       </dl>
@@ -1312,11 +1332,13 @@ function onlineHome(){
    <div class="box"><h3>Rejoindre</h3><label class="nrow code-row"><input id="o-code" type="text" maxlength="4" placeholder="CODE" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false" enterkeyhint="go" aria-label="Code de la partie"></label><button class="btn btn-color btn-block" id="o-join">Rejoindre</button></div>`;
   const err=m=>{const e=$("#o-err");e.textContent=m;e.hidden=false;buzz([30,40,30])};
   const getName=()=>{const n=$("#o-name").value.replace(/[<>&"']/g,"").trim().slice(0,12);if(!n){err("Écris ton prénom pour que les autres te reconnaissent.");return null}D.settings.onName=n;save();return n};
-  const busy=b=>el.querySelectorAll(".btn").forEach(x=>x.disabled=b);
+  const busy=(b,btn,label)=>{el.querySelectorAll(".btn").forEach(x=>x.disabled=b);
+    if(btn){if(b){btn.dataset.lbl=btn.textContent;btn.classList.add("loading");btn.innerHTML=`${label}<span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>`;replay(btn,"bump")}}
+    if(!b)el.querySelectorAll(".btn.loading").forEach(x=>{x.classList.remove("loading");x.textContent=x.dataset.lbl||x.textContent})};
   const fail=e=>{busy(false);err(e&&e.message==="load"?"Impossible de charger Firebase. Vérifie ta connexion.":"Connexion impossible. Vérifie ta connexion et les règles de la base.")};
   const nm=$("#o-name");nm.onkeydown=e=>{if(e.key==="Enter")nm.blur()};
   const cd=$("#o-code");cd.oninput=()=>{cd.value=cd.value.toUpperCase().replace(/[^A-Z]/g,"")};cd.onkeydown=e=>{if(e.key==="Enter")$("#o-join").click()};
-  $("#o-create").onclick=async()=>{const n=getName();if(!n)return;busy(true);$("#o-err").hidden=true;
+  $("#o-create").onclick=async()=>{const n=getName();if(!n)return;busy(true,$("#o-create"),"Création du salon");$("#o-err").hidden=true;
     try{const db=await fbDb();const A="ABCDEFGHJKMNPQRSTUVWXYZ";let code;
       for(let k=0;k<8;k++){code=[0,0,0,0].map(()=>A[Math.random()*A.length|0]).join("");const s=await db.ref("rooms/"+code+"/status").once("value");if(!s.exists())break}
       const t=Date.now();
@@ -1325,7 +1347,7 @@ function onlineHome(){
     }catch(e){fail(e)}};
   $("#o-join").onclick=async()=>{const n=getName();if(!n)return;const code=cd.value.trim().toUpperCase();
     if(code.length!==4){err("Le code fait 4 lettres.");return}
-    busy(true);$("#o-err").hidden=true;
+    busy(true,$("#o-join"),"Connexion");$("#o-err").hidden=true;
     try{const db=await fbDb();let why=null;
       const r=await db.ref("rooms/"+code).transaction(room=>{
         if(!room)return room;
@@ -1374,15 +1396,22 @@ function onRender(){
 /* Salle d'attente */
 function onLobby(room){
   const el=$("#s-online");const host=room.host===OG.pid;const ps=onPlayers(room);const s=byId(room.sid)||SERIES[0];
-  if(OG.view!=="lobby"||curScreen!==el){OG.view="lobby";OG.lsKey="";
+  let enter=false;
+  if(OG.view!=="lobby"||curScreen!==el){OG.view="lobby";OG.lsKey="";OG.seen=null;enter=true;
     el.innerHTML=`<div class="topbar"><button class="btn btn-round" id="l-leave" aria-label="Quitter la salle">${BACK_SVG}</button><span class="caption muted">Salle d'attente</span></div>
-     <div class="intro lobby-card shine c-lavender"><span class="rings" aria-hidden="true"><i></i><i></i><i></i></span><span class="caption">Code de la partie</span><h1>${esc(OG.code)}</h1><p class="blurb">Tes amis tapent ce code dans « Rejoindre ».</p></div>
+     <div class="intro lobby-card shine c-lavender"><span class="rings" aria-hidden="true"><i></i><i></i><i></i></span><span class="caption">Code de la partie</span><h1 aria-label="${esc(OG.code)}">${[...OG.code].map((c,k)=>`<span class="code-l" style="--i:${k}" aria-hidden="true">${esc(c)}</span>`).join("")}</h1><p class="blurb">Tes amis tapent ce code dans « Rejoindre ».</p></div>
      <div class="box"><h3>Joueurs <span class="muted num" id="l-count"></span></h3><div class="drows" id="l-players"></div></div>
      <div class="box"><h3>Série</h3><div id="l-series"></div></div>
      <div id="l-actions" style="display:flex;flex-direction:column;gap:var(--space-2)"></div>`;
-    $("#l-leave").onclick=onLeave;show("online")}
+    $("#l-leave").onclick=onLeave;const wasHere=curScreen===el;show("online");
+    if(!reduced()){const card=el.querySelector(".lobby-card");card.classList.add("anim");
+      if(wasHere)riseIn([...el.children].filter(n=>n!==card),60,70);
+      setTimeout(()=>{if(card.isConnected){buzz([8,40,8]);burstFrom(card.querySelector("h1"),70,{power:9,spread:1.1})}},800)}}
   $("#l-count").textContent=`${ps.length}/${MAXP}`;
-  $("#l-players").innerHTML=ps.map(p=>`<div class="drow c-${PCOL6[p.k]}"><i class="pdot"></i><div class="l"><b>${esc(p.name)}${p.id===OG.pid?` <em class="me-tag">toi</em>`:""}${p.id===room.host?` <em class="near">hôte</em>`:""}</b></div><span></span></div>`).join("");
+  const seen=OG.seen;OG.seen=new Set(ps.map(p=>p.id));
+  const fresh=p=>!reduced()&&(seen?!seen.has(p.id):enter);
+  if(seen&&ps.some(p=>!seen.has(p.id)))buzz(12);
+  $("#l-players").innerHTML=ps.map((p,n)=>`<div class="drow c-${PCOL6[p.k]}${fresh(p)?" join":""}" style="animation-delay:${seen?0:380+n*70}ms"><i class="pdot"></i><div class="l"><b>${esc(p.name)}${p.id===OG.pid?` <em class="me-tag">toi</em>`:""}${p.id===room.host?` <em class="near">hôte</em>`:""}</b></div><span></span></div>`).join("");
   const sk=host+":"+room.sid;
   if(OG.lsKey!==sk){OG.lsKey=sk;
     $("#l-series").innerHTML=host?`<select class="sel" id="l-sel" aria-label="Série">${SERIES.map(x=>`<option value="${x.id}"${x.id===room.sid?" selected":""}>${esc(x.name)}</option>`).join("")}</select><p class="muted" style="margin-top:8px;font-size:15px">10 questions · <b class="num">${withUnit(s.total,s.unit)}</b> à répartir.</p>`:`<p><b>${esc(s.name)}</b></p><p class="muted">10 questions · <span class="num">${withUnit(s.total,s.unit)}</span> à répartir.</p>`;

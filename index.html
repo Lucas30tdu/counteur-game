@@ -458,6 +458,8 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;opa
 .sel{width:100%;height:52px;border:0;border-radius:var(--radius-md);background:var(--surface-sunken);color:var(--ink);font:inherit;font-weight:700;font-size:16px;padding:0 var(--space-4);-webkit-appearance:none;appearance:none}
 .row-btns{display:flex;gap:var(--space-2);flex-wrap:wrap}
 .lobby-card{flex:none;min-height:230px}
+/* Sur l'accueil, les blocs posés sous la carte Jouer restent toujours au-dessus de son ombre, pendant et après l'animation d'entrée */
+#p-series>.box,#p-series>.section-title,#p-series>.resume-bar{position:relative;z-index:1}
 .lobby-card h1{font-size:64px;line-height:68px;letter-spacing:.14em;margin-right:-.14em}
 .me-tag{font-style:normal;font-size:11px;line-height:14px;font-weight:700;padding:2px 8px;border-radius:var(--radius-pill);background:var(--surface-sunken);color:var(--ink-muted);letter-spacing:.02em;text-transform:uppercase}
 .chip.ok{background:var(--teal-soft)}
@@ -535,8 +537,8 @@ html{-webkit-text-size-adjust:100%}
       <h3 id="about-h">À propos</h3>
       <dl class="about">
         <div><dt>Nom</dt><dd>Counteur</dd></div>
-        <div><dt>Version du jeu</dt><dd>2.2</dd></div>
-        <div><dt>Version de l'artefact</dt><dd>1793797877-82e2</dd></div>
+        <div><dt>Version du jeu</dt><dd>2.3</dd></div>
+        <div><dt>Version de l'artefact</dt><dd>1793798425-eb4d</dd></div>
         <div><dt>Dernière modification</dt><dd>04/11/2026</dd></div>
         <div><dt>Créé par</dt><dd>Lucas Courcy</dd></div>
       </dl>

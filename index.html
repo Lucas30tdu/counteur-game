@@ -310,6 +310,8 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;opa
 .wordmark .ring-o{stroke-dasharray:247;stroke-dashoffset:0;animation:drawO 1.3s var(--ease-out) .3s both}
 @keyframes wmIn{from{opacity:0;transform:translateY(6px)}}
 @keyframes drawO{from{stroke-dashoffset:247}}
+/* Le logo ne s'anime qu'au lancement : à chaque retour sur l'accueil, il reste fixe et l'écran répond tout de suite */
+.wm-done .wordmark,.wm-done .wordmark .ring-o{animation:none}
 
 /* Onglets : pastille qui glisse */
 .tabs{position:relative;isolation:isolate}
@@ -952,13 +954,13 @@ function applyTheme(){const t=D.settings.theme;const r=document.documentElement;
   document.querySelectorAll("#theme-pick .tab").forEach(b=>{const on=b.dataset.themeV===t;b.setAttribute("aria-selected",on);b.setAttribute("aria-checked",on)});placeAll(false)}
 
 /* ---------- Navigation ---------- */
-let curScreen=null;const leaveT={};
+let curScreen=null,wmT=0;const leaveT={};
 function show(id){const next=$("#s-"+id);const prev=curScreen&&curScreen!==next?curScreen:null;const same=curScreen===next;
   $("#app").dataset.dir=id==="home"?"back":"fwd";
   document.querySelectorAll(".screen").forEach(s=>{if(s!==next&&s!==prev){s.hidden=true;s.classList.remove("is-leaving","is-entering")}});
   if(prev){clearTimeout(leaveT[prev.id]);prev.classList.remove("is-entering");
     if(reduced())prev.hidden=true;else{prev.classList.add("is-leaving");leaveT[prev.id]=setTimeout(()=>{prev.hidden=true;prev.classList.remove("is-leaving")},240)}}
-  clearTimeout(leaveT[next.id]);next.classList.remove("is-leaving");next.hidden=false;next.scrollTop=0;curScreen=next;
+  clearTimeout(leaveT[next.id]);next.classList.remove("is-leaving");next.hidden=false;next.scrollTop=0;curScreen=next;if(id==="home"&&!wmT)wmT=setTimeout(()=>document.documentElement.classList.add("wm-done"),1900);
   if(!same&&!reduced()){
     riseIn([...next.children].filter(n=>!n.matches(".end-panel,.counter")&&!(id==="home"&&n.matches(".panel"))),60,45);
     if(id==="home"){const p=next.querySelector(".panel:not([hidden])");if(p)riseIn(p.children,180,36,true)}
